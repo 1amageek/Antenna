@@ -14,6 +14,7 @@
 		122102B51C3675C100F87CC6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 122102B41C3675C100F87CC6 /* Assets.xcassets */; };
 		122102B81C3675C100F87CC6 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 122102B61C3675C100F87CC6 /* LaunchScreen.storyboard */; };
 		122102C31C3675C100F87CC6 /* AntennaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122102C21C3675C100F87CC6 /* AntennaTests.swift */; };
+		122102CE1C36769700F87CC6 /* Antenna.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122102CD1C36769700F87CC6 /* Antenna.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +39,7 @@
 		122102BE1C3675C100F87CC6 /* AntennaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AntennaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		122102C21C3675C100F87CC6 /* AntennaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntennaTests.swift; sourceTree = "<group>"; };
 		122102C41C3675C100F87CC6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		122102CD1C36769700F87CC6 /* Antenna.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Antenna.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +84,7 @@
 				122102AB1C3675C100F87CC6 /* AppDelegate.swift */,
 				122102AD1C3675C100F87CC6 /* MasterViewController.swift */,
 				122102AF1C3675C100F87CC6 /* DetailViewController.swift */,
+				122102CD1C36769700F87CC6 /* Antenna.swift */,
 				122102B11C3675C100F87CC6 /* Main.storyboard */,
 				122102B41C3675C100F87CC6 /* Assets.xcassets */,
 				122102B61C3675C100F87CC6 /* LaunchScreen.storyboard */,
@@ -201,6 +204,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				122102B01C3675C100F87CC6 /* DetailViewController.swift in Sources */,
+				122102CE1C36769700F87CC6 /* Antenna.swift in Sources */,
 				122102AE1C3675C100F87CC6 /* MasterViewController.swift in Sources */,
 				122102AC1C3675C100F87CC6 /* AppDelegate.swift in Sources */,
 			);
@@ -390,6 +394,7 @@
 				122102C91C3675C100F87CC6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		122102CA1C3675C100F87CC6 /* Build configuration list for PBXNativeTarget "AntennaTests" */ = {
 			isa = XCConfigurationList;
@@ -398,6 +403,7 @@
 				122102CC1C3675C100F87CC6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
