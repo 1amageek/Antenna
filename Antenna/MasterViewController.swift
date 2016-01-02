@@ -8,11 +8,12 @@
 
 import UIKit
 
+
 class MasterViewController: UITableViewController {
 
     var detailViewController: DetailViewController? = nil
     var objects = [AnyObject]()
-
+    let serviceUUID = "CB0CC42D-8F20-4FA7-A224-DBC1707CF89A"
 
     override func viewDidLoad() {
         super.viewDidLoad()
