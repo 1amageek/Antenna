@@ -102,6 +102,14 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         guard peripheral.state != CBPeripheralManagerState.PoweredOff else {
             return
         }
+    }
+    
+    func peripheralManager(peripheral: CBPeripheralManager, didAddService service: CBService, error: NSError?) {
+        if error != nil { print(error) }
+        
+    }
+    
+    func peripheralManager(peripheral: CBPeripheralManager, willRestoreState dict: [String : AnyObject]) {
         
     }
     
