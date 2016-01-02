@@ -22,14 +22,13 @@ class MasterViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        Antenna.sharedAntenna.startForReady { (status) -> Void in
-            if status == AntennaStatus.PeripheralManagerIsReady {
-                Antenna.sharedAntenna.startAdvertising([CBAdvertisementDataServiceUUIDsKey:[self.serviceUUID]])
-            }
-            if status == AntennaStatus.CentralManagerIsReady {
+        Antenna.sharedAntenna.startAndReady({ () -> Void in
+            Antenna.sharedAntenna.startAdvertising([CBAdvertisementDataServiceUUIDsKey:[self.serviceUUID]])
+            }, centralIsReadyHandler: { () -> Void in
                 Antenna.sharedAntenna.scanForPeripheralsWithServices([self.serviceUUID])
-            }
-        }
+        })
+        
+        
         
         
         self.navigationItem.leftBarButtonItem = self.editButtonItem()

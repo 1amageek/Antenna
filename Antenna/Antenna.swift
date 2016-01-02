@@ -53,8 +53,8 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     var state: AntennaStatus!
     var peripheralManager: CBPeripheralManager!
     var centralManager: CBCentralManager!
-    var discoveredPeripheral: CBPeripheral?
     var discoveredPeripherals: [CBPeripheral]! = []
+    var connectedPeripherals: [CBPeripheral]! = []
     
     static let sharedAntenna: Antenna = {
         let antenna = Antenna()
@@ -67,9 +67,11 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     
     // MARK - method
     
-    var readyBlock: ((AntennaStatus) -> ())?
-    func startForReady(handler:((AntennaStatus) -> Void)?) {
-        readyBlock = handler
+    var peripheralReadyBlock: (() -> ())?
+    var centralReadyBlock: (() -> ())?
+    func startAndReady(peripheralIsReadyHandler:() -> Void, centralIsReadyHandler:() -> Void) {
+        peripheralReadyBlock = peripheralIsReadyHandler
+        centralReadyBlock = centralIsReadyHandler
     }
     
     private var _serviceUUIDs: [CBUUID]?
@@ -106,8 +108,8 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         switch central.state {
         case .PoweredOn:
             self.state = AntennaStatus.CentralManagerIsReady
-            if self.readyBlock != nil {
-                self.readyBlock!(self.state)
+            if self.centralReadyBlock != nil {
+                self.centralReadyBlock!()
             }
             break
         case .PoweredOff: break
@@ -122,16 +124,17 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         print(__FUNCTION__)
         print(peripheral)
         
-        if self.discoveredPeripheral != peripheral {
-            self.discoveredPeripheral = peripheral
+        if !self.discoveredPeripherals.contains(peripheral) {
             self.discoveredPeripherals.append(peripheral)
             self.centralManager.connectPeripheral(peripheral, options: nil)
         }
+        
     }
     
     func centralManager(central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
         print(__FUNCTION__)
         peripheral.delegate = self
+        self.connectedPeripherals.append(peripheral)
     }
     
     func centralManager(central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
@@ -141,6 +144,9 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     
     func centralManager(central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: NSError?) {
         print(__FUNCTION__)
+        let index: Int = self.connectedPeripherals.indexOf(peripheral)!
+        self.connectedPeripherals.removeAtIndex(index)
+        print(self.connectedPeripherals)
         print(error!)
     }
     
@@ -166,8 +172,8 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         case .PoweredOn:
             self.state = AntennaStatus.PeripheralManagerIsReady
             peripheral.addService(self.locationService)
-            if self.readyBlock != nil {
-                self.readyBlock!(self.state)
+            if self.peripheralReadyBlock != nil {
+                peripheralReadyBlock!()
             }
             break
         case .PoweredOff: break
