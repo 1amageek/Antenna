@@ -63,7 +63,7 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     }
     
     func startAdvertising(advertisementData: [String : AnyObject]?) {
-        peripheralManager.startAdvertising(advertisementData)a
+        peripheralManager.startAdvertising(advertisementData)
     }
     
     // MARK: - CBCentralManagerDelegate
