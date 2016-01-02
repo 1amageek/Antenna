@@ -39,22 +39,13 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     }()
     
     let queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0)
-    /*
-    private(set) lazy var centralManager: CBCentralManager = {
-        var centralManager = CBCentralManager(delegate: self, queue: self.queue, options: [CBCentralManagerOptionRestoreIdentifierKey: self.centralRestoreIdentifierKey])
-        return centralManager
-    }()
     
-    private(set) lazy var peripheralManager: CBPeripheralManager = {
-        var peripheralManager: CBPeripheralManager = CBPeripheralManager(delegate: self, queue: self.queue, options: [CBPeripheralManagerOptionRestoreIdentifierKey: self.peripheralRestoreIdentifierKey])
-        return peripheralManager
-    }()
-    */
     var state: AntennaStatus!
     var peripheralManager: CBPeripheralManager!
     var centralManager: CBCentralManager!
     var discoveredPeripherals: [CBPeripheral]! = []
     var connectedPeripherals: [CBPeripheral]! = []
+    weak var delegate: AntennaDelegate?
     
     static let sharedAntenna: Antenna = {
         let antenna = Antenna()
@@ -135,6 +126,7 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         print(__FUNCTION__)
         peripheral.delegate = self
         self.connectedPeripherals.append(peripheral)
+        self.delegate!.antenna(self, didChangeConnectedPeripherals: self.connectedPeripherals)
     }
     
     func centralManager(central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
@@ -146,7 +138,7 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         print(__FUNCTION__)
         let index: Int = self.connectedPeripherals.indexOf(peripheral)!
         self.connectedPeripherals.removeAtIndex(index)
-        print(self.connectedPeripherals)
+        self.delegate!.antenna(self, didChangeConnectedPeripherals: self.connectedPeripherals)
         print(error!)
     }
     
@@ -218,4 +210,8 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         print(__FUNCTION__)
     }
 
+}
+
+protocol AntennaDelegate: NSObjectProtocol {
+    func antenna(antenna: Antenna, didChangeConnectedPeripherals peripherals: [CBPeripheral])
 }
