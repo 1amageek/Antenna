@@ -50,6 +50,8 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         return antenna
     }()
     
+    // MARK - method
+    
     internal func scanForPeripheralsWithServices(serviceUUIDs: [String]?) {
         
         let UUIDs = serviceUUIDs!.map { (uuid) -> CBUUID in
@@ -58,6 +60,10 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         
         let options: [String: AnyObject] = [CBCentralManagerScanOptionAllowDuplicatesKey:false]
         centralManager.scanForPeripheralsWithServices(UUIDs, options: options)
+    }
+    
+    func startAdvertising(advertisementData: [String : AnyObject]?) {
+        peripheralManager.startAdvertising(advertisementData)a
     }
     
     // MARK: - CBCentralManagerDelegate
@@ -83,7 +89,7 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     }
     
     func centralManager(central: CBCentralManager, willRestoreState dict: [String : AnyObject]) {
-        
+        //let peripherals: [CBPeripheral] = dict[CBAdvertisementDataLocalNameKey]
     }
     
     // MARK: - CBPeripheralDelegate
