@@ -7,17 +7,31 @@
 //
 
 import UIKit
-
+import CoreBluetooth
 
 class MasterViewController: UITableViewController {
 
     var detailViewController: DetailViewController? = nil
     var objects = [AnyObject]()
-    let serviceUUID = "CB0CC42D-8F20-4FA7-A224-DBC1707CF89A"
+    let serviceUUID = CBUUID(string: "CB0CC42D-8F20-4FA7-A224-DBC1707CF89A")
+    
+    deinit {
+        Antenna.sharedAntenna.stopAdvertising()
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+
+        Antenna.sharedAntenna.startForReady { (status) -> Void in
+            if status == AntennaStatus.PeripheralManagerIsReady {
+                Antenna.sharedAntenna.startAdvertising([CBAdvertisementDataServiceUUIDsKey:[self.serviceUUID]])
+            }
+            if status == AntennaStatus.CentralManagerIsReady {
+                Antenna.sharedAntenna.scanForPeripheralsWithServices([self.serviceUUID])
+            }
+        }
+        
+        
         self.navigationItem.leftBarButtonItem = self.editButtonItem()
 
         let addButton = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: "insertNewObject:")
