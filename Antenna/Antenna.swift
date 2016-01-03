@@ -23,28 +23,14 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     private let centralRestoreIdentifierKey = "inc.stamp.antenna.central"
     private let peripheralRestoreIdentifierKey = "inc.stamp.antenna.peripheral"
     
-    // Characteristic
-    private let locationCharacteristicUUID = CBUUID(string: "3E770C8F-DB75-43AA-A335-1013A728BF42")
-    private(set) lazy var locationCharacteristic: CBMutableCharacteristic = {
-        var locationCharacteristic: CBMutableCharacteristic = CBMutableCharacteristic(type: self.locationCharacteristicUUID, properties: .Broadcast, value: nil, permissions: .Readable)
-        return locationCharacteristic
-    }()
-    
-    // Service
-    private let locationServiceUUID = CBUUID(string: "6257CA2B-59EE-4C50-8875-C7229FCFFCBA")
-    private(set) lazy var locationService: CBMutableService = {
-        var locationService: CBMutableService = CBMutableService(type: self.locationServiceUUID, primary: true)
-        locationService.characteristics = [self.locationCharacteristic]
-        return locationService
-    }()
-    
     let queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0)
     
     var state: AntennaStatus!
     var peripheralManager: CBPeripheralManager!
     var centralManager: CBCentralManager!
-    var discoveredPeripherals: [CBPeripheral]! = []
+    var discoveredPeripheral: CBPeripheral?
     var connectedPeripherals: [CBPeripheral]! = []
+    var services: [CBMutableService]?
     weak var delegate: AntennaDelegate?
     
     static let sharedAntenna: Antenna = {
@@ -65,25 +51,18 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         centralReadyBlock = centralIsReadyHandler
     }
     
-    private var _serviceUUIDs: [CBUUID]?
     func scanForPeripheralsWithServices(serviceUUIDs: [CBUUID]?) {
         print(__FUNCTION__)
-        guard let serviceUUIDs = serviceUUIDs else {
-            return
-        }
-        self._serviceUUIDs = serviceUUIDs
-        
+        let serviceUUIDs = services?.flatMap({$0.UUID})
         let options: [String: AnyObject] = [CBCentralManagerScanOptionAllowDuplicatesKey:false]
         self.centralManager.scanForPeripheralsWithServices(serviceUUIDs, options: options)
     }
     
-    private var _advertisementData: [String: AnyObject]?
     func startAdvertising(advertisementData: [String : AnyObject]?) {
         print(__FUNCTION__)
         guard let advertisementData = advertisementData else {
             return
         }
-        self._advertisementData = advertisementData
         self.peripheralManager.startAdvertising(advertisementData)
     }
     
@@ -113,20 +92,25 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     
     func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
         print(__FUNCTION__)
-        print(peripheral)
-        
-        if !self.discoveredPeripherals.contains(peripheral) {
-            self.discoveredPeripherals.append(peripheral)
+        if self.discoveredPeripheral != peripheral {
+            self.discoveredPeripheral = peripheral
             self.centralManager.connectPeripheral(peripheral, options: nil)
         }
-        
     }
     
     func centralManager(central: CBCentralManager, didConnectPeripheral peripheral: CBPeripheral) {
         print(__FUNCTION__)
-        peripheral.delegate = self
-        self.connectedPeripherals.append(peripheral)
-        self.delegate!.antenna(self, didChangeConnectedPeripherals: self.connectedPeripherals)
+        if !self.connectedPeripherals.contains(peripheral) {
+            self.connectedPeripherals.append(peripheral)
+            self.delegate!.antenna(self, didChangeConnectedPeripherals: self.connectedPeripherals)
+            
+            let serviceUUIDs: [CBUUID] = self.services!.map { (service: CBService) -> CBUUID in
+                return service.UUID
+            }
+            peripheral.delegate = self
+            peripheral.discoverServices(serviceUUIDs)
+        }
+        self.discoveredPeripheral = nil
     }
     
     func centralManager(central: CBCentralManager, didFailToConnectPeripheral peripheral: CBPeripheral, error: NSError?) {
@@ -136,9 +120,11 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     
     func centralManager(central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: NSError?) {
         print(__FUNCTION__)
-        let index: Int = self.connectedPeripherals.indexOf(peripheral)!
-        self.connectedPeripherals.removeAtIndex(index)
-        self.delegate!.antenna(self, didChangeConnectedPeripherals: self.connectedPeripherals)
+        if self.connectedPeripherals.contains(peripheral) {
+            let index: Int = self.connectedPeripherals.indexOf(peripheral)!
+            self.connectedPeripherals.removeAtIndex(index)
+            self.delegate!.antenna(self, didChangeConnectedPeripherals: self.connectedPeripherals)
+        }
         print(error!)
     }
     
@@ -147,6 +133,23 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     }
     
     // MARK: - CBPeripheralDelegate
+    
+    func peripheral(peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
+        print(__FUNCTION__)
+        let characteristicUUID: [CBUUID] = self.services!.flatMap { $0.characteristics! }.flatMap({$0.UUID})
+        for (_, service) in (peripheral.services?.enumerate())! {
+            peripheral.discoverCharacteristics(characteristicUUID, forService: service)
+        }
+    }
+    
+    func peripheral(peripheral: CBPeripheral, didDiscoverCharacteristicsForService service: CBService, error: NSError?) {
+        print(__FUNCTION__)
+//        for (_, characteristic) in (service.characteristics?.enumerate())! {
+//            if characteristic.UUID.isEqual(self.locationCharacteristicUUID) {
+//                // TODO
+//            }
+//        }
+    }
     
     func peripheralDidUpdateName(peripheral: CBPeripheral) {
         print(__FUNCTION__)
@@ -163,7 +166,9 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         switch peripheral.state {
         case .PoweredOn:
             self.state = AntennaStatus.PeripheralManagerIsReady
-            peripheral.addService(self.locationService)
+            for service in services! {
+                peripheral.addService(service)
+            }
             if self.peripheralReadyBlock != nil {
                 peripheralReadyBlock!()
             }

@@ -12,6 +12,7 @@ import CoreBluetooth
 class MasterViewController: UITableViewController, AntennaDelegate {
 
     var detailViewController: DetailViewController? = nil
+    let characteristicUUID: CBUUID = CBUUID(string: "3E770C8F-DB75-43AA-A335-1013A728BF42")
     let serviceUUID = CBUUID(string: "CB0CC42D-8F20-4FA7-A224-DBC1707CF89A")
     
     deinit {
@@ -20,7 +21,10 @@ class MasterViewController: UITableViewController, AntennaDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        let characteristic: CBMutableCharacteristic = CBMutableCharacteristic(type: characteristicUUID, properties: .Broadcast, value: nil, permissions: .Readable)
+        let service: CBMutableService = CBMutableService(type: serviceUUID, primary: true)
+        service.characteristics = [characteristic]
+        Antenna.sharedAntenna.services = [service]
         Antenna.sharedAntenna.startAndReady({ () -> Void in
             Antenna.sharedAntenna.startAdvertising([CBAdvertisementDataServiceUUIDsKey:[self.serviceUUID]])
             }, centralIsReadyHandler: { () -> Void in
