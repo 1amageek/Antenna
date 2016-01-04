@@ -20,8 +20,8 @@ struct AntennaStatus: OptionSetType {
 
 class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, CBPeripheralDelegate {
     
-    private let centralRestoreIdentifierKey = "inc.stamp.antenna.central"
-    private let peripheralRestoreIdentifierKey = "inc.stamp.antenna.peripheral"
+    let centralRestoreIdentifierKey = "inc.stamp.antenna.central"
+    let peripheralRestoreIdentifierKey = "inc.stamp.antenna.peripheral"
     
     let queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0)
     
@@ -52,8 +52,8 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         let antenna = Antenna()
         // setup
         antenna.status = AntennaStatus.AntennaIsBusy
-        antenna.peripheralManager = CBPeripheralManager(delegate: antenna, queue: nil, options: [CBPeripheralManagerOptionRestoreIdentifierKey: antenna.peripheralRestoreIdentifierKey])
-        antenna.centralManager = CBCentralManager(delegate: antenna, queue: nil, options: [CBCentralManagerOptionRestoreIdentifierKey: antenna.centralRestoreIdentifierKey])
+        antenna.peripheralManager = CBPeripheralManager(delegate: antenna, queue: antenna.queue, options: [CBPeripheralManagerOptionRestoreIdentifierKey: antenna.peripheralRestoreIdentifierKey])
+        antenna.centralManager = CBCentralManager(delegate: antenna, queue: antenna.queue, options: [CBCentralManagerOptionRestoreIdentifierKey: antenna.centralRestoreIdentifierKey])
         return antenna
     }()
     
