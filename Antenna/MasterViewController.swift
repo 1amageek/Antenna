@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreBluetooth
+import Photos
 
 class MasterViewController: UITableViewController, AntennaDelegate {
 
@@ -15,22 +16,30 @@ class MasterViewController: UITableViewController, AntennaDelegate {
     let characteristicUUID: CBUUID = CBUUID(string: "3E770C8F-DB75-43AA-A335-1013A728BF42")
     let serviceUUID = CBUUID(string: "CB0CC42D-8F20-4FA7-A224-DBC1707CF89A")
     
+    var peripheralManager: CBPeripheralManager!
+    
+    
     deinit {
         Antenna.sharedAntenna.stopAdvertising()
     }
 
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        let characteristic: CBMutableCharacteristic = CBMutableCharacteristic(type: characteristicUUID, properties: .Broadcast, value: nil, permissions: .Readable)
-        let service: CBMutableService = CBMutableService(type: serviceUUID, primary: true)
-        service.characteristics = [characteristic]
-        Antenna.sharedAntenna.services = [service]
-        Antenna.sharedAntenna.startAndReady({ () -> Void in
-            Antenna.sharedAntenna.startAdvertising([CBAdvertisementDataServiceUUIDsKey:[self.serviceUUID]])
-            }, centralIsReadyHandler: { () -> Void in
-                Antenna.sharedAntenna.scanForPeripheralsWithServices([self.serviceUUID])
-        })
+        
         Antenna.sharedAntenna.delegate = self
+        Antenna.sharedAntenna.startAndReady { (antenna) -> Void in
+            let characteristic: CBMutableCharacteristic = CBMutableCharacteristic(type: self.characteristicUUID, properties: CBCharacteristicProperties.Notify, value: nil, permissions: .Readable)
+            let service: CBMutableService = CBMutableService(type: self.serviceUUID, primary: true)
+            service.characteristics = [characteristic]
+            antenna.services = [service]
+
+            antenna.startAdvertising([CBAdvertisementDataLocalNameKey: "Antenna", CBAdvertisementDataServiceUUIDsKey: [self.serviceUUID]])
+            //antenna.stopAdvertising()
+            antenna.scanForPeripheralsWithServices([self.serviceUUID])
+            
+        }
         
         if let split = self.splitViewController {
             let controllers = split.viewControllers

@@ -15,7 +15,7 @@ struct AntennaStatus: OptionSetType {
     static let AntennaIsBusy = AntennaStatus(rawValue: 0)
     static let CentralManagerIsReady = AntennaStatus(rawValue: 1)
     static let PeripheralManagerIsReady = AntennaStatus(rawValue: 2)
-    static let AntennaIsReady: AntennaStatus = [CentralManagerIsReady, CentralManagerIsReady]
+    static let AntennaIsReady: AntennaStatus = [CentralManagerIsReady, PeripheralManagerIsReady]
 }
 
 class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, CBPeripheralDelegate {
@@ -25,37 +25,53 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     
     let queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0)
     
-    var state: AntennaStatus!
+    var status: AntennaStatus! {
+        didSet {
+            if status == .AntennaIsReady {
+                print("Antenna is ready!")
+                if self.readyClosure != nil {
+                    self.readyClosure!(antenna: self)
+                }
+            }
+        }
+    }
     var peripheralManager: CBPeripheralManager!
     var centralManager: CBCentralManager!
     var discoveredPeripheral: CBPeripheral?
     var connectedPeripherals: [CBPeripheral]! = []
-    var services: [CBMutableService]?
+    var services: [CBMutableService]? {
+        didSet {
+            for service: CBMutableService in services! {
+                self.peripheralManager.addService(service)
+            }
+        }
+    }
     weak var delegate: AntennaDelegate?
     
     static let sharedAntenna: Antenna = {
         let antenna = Antenna()
         // setup
-        antenna.state = AntennaStatus.AntennaIsBusy
-        antenna.peripheralManager = CBPeripheralManager(delegate: antenna, queue: antenna.queue, options: [CBPeripheralManagerOptionRestoreIdentifierKey: antenna.peripheralRestoreIdentifierKey])
-        antenna.centralManager = CBCentralManager(delegate: antenna, queue: antenna.queue, options: [CBCentralManagerOptionRestoreIdentifierKey: antenna.centralRestoreIdentifierKey])
+        antenna.status = AntennaStatus.AntennaIsBusy
+        antenna.peripheralManager = CBPeripheralManager(delegate: antenna, queue: nil, options: [CBPeripheralManagerOptionRestoreIdentifierKey: antenna.peripheralRestoreIdentifierKey])
+        antenna.centralManager = CBCentralManager(delegate: antenna, queue: nil, options: [CBCentralManagerOptionRestoreIdentifierKey: antenna.centralRestoreIdentifierKey])
         return antenna
     }()
     
     // MARK - method
     
-    var peripheralReadyBlock: (() -> ())?
-    var centralReadyBlock: (() -> ())?
-    func startAndReady(peripheralIsReadyHandler:() -> Void, centralIsReadyHandler:() -> Void) {
-        peripheralReadyBlock = peripheralIsReadyHandler
-        centralReadyBlock = centralIsReadyHandler
+    var readyClosure: ((antenna: Antenna) -> ())?
+    func startAndReady(readyClosure:(antenna: Antenna) -> Void) {
+        self.readyClosure = readyClosure
     }
     
     func scanForPeripheralsWithServices(serviceUUIDs: [CBUUID]?) {
         print(__FUNCTION__)
-        let serviceUUIDs = services?.flatMap({$0.UUID})
         let options: [String: AnyObject] = [CBCentralManagerScanOptionAllowDuplicatesKey:false]
         self.centralManager.scanForPeripheralsWithServices(serviceUUIDs, options: options)
+    }
+    
+    func stopScan() {
+        self.centralManager.stopScan()
     }
     
     func startAdvertising(advertisementData: [String : AnyObject]?) {
@@ -77,10 +93,7 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         print(__FUNCTION__)
         switch central.state {
         case .PoweredOn:
-            self.state = AntennaStatus.CentralManagerIsReady
-            if self.centralReadyBlock != nil {
-                self.centralReadyBlock!()
-            }
+            self.status.insert(AntennaStatus.CentralManagerIsReady)
             break
         case .PoweredOff: break
         case .Resetting: break
@@ -136,19 +149,20 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     
     func peripheral(peripheral: CBPeripheral, didDiscoverServices error: NSError?) {
         print(__FUNCTION__)
-        let characteristicUUID: [CBUUID] = self.services!.flatMap { $0.characteristics! }.flatMap({$0.UUID})
-        for (_, service) in (peripheral.services?.enumerate())! {
-            peripheral.discoverCharacteristics(characteristicUUID, forService: service)
+        let characteristicUUIDs: [CBUUID] = self.services!.flatMap { $0.characteristics! }.flatMap({$0.UUID})
+        for service in peripheral.services! {
+            peripheral.discoverCharacteristics(characteristicUUIDs, forService: service)
         }
     }
     
     func peripheral(peripheral: CBPeripheral, didDiscoverCharacteristicsForService service: CBService, error: NSError?) {
         print(__FUNCTION__)
-//        for (_, characteristic) in (service.characteristics?.enumerate())! {
-//            if characteristic.UUID.isEqual(self.locationCharacteristicUUID) {
-//                // TODO
-//            }
-//        }
+        let characteristicUUIDs: [CBUUID] = self.services!.flatMap { $0.characteristics! }.flatMap({$0.UUID})
+        for characteristic in service.characteristics! {
+            if characteristicUUIDs.contains(characteristic.UUID) {
+                print("Set characteristics",characteristic.UUID)
+            }
+        }
     }
     
     func peripheralDidUpdateName(peripheral: CBPeripheral) {
@@ -159,19 +173,29 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
         print(__FUNCTION__)
     }
     
+    func peripheral(peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: NSError?) {
+        print(__FUNCTION__)
+    }
+    
+    func peripheral(peripheral: CBPeripheral, didDiscoverDescriptorsForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+        print(__FUNCTION__)
+    }
+    
+    func peripheral(peripheral: CBPeripheral, didDiscoverIncludedServicesForService service: CBService, error: NSError?) {
+        print(__FUNCTION__)
+    }
+    
+    func peripheral(peripheral: CBPeripheral, didUpdateNotificationStateForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+        print(__FUNCTION__)
+    }
+    
     // MARK: - CBPeripheralManagerDelegate
     
     func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager) {
         print(__FUNCTION__)
         switch peripheral.state {
         case .PoweredOn:
-            self.state = AntennaStatus.PeripheralManagerIsReady
-            for service in services! {
-                peripheral.addService(service)
-            }
-            if self.peripheralReadyBlock != nil {
-                peripheralReadyBlock!()
-            }
+            self.status.insert(AntennaStatus.PeripheralManagerIsReady)
             break
         case .PoweredOff: break
         case .Resetting: break
@@ -183,15 +207,14 @@ class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, 
     
     func peripheralManager(peripheral: CBPeripheralManager, didAddService service: CBService, error: NSError?) {
         print(__FUNCTION__)
-        print(service)
-        
-    }
-    
-    func peripheralManager(peripheral: CBPeripheralManager, willRestoreState dict: [String : AnyObject]) {
-        
     }
     
     func peripheralManagerDidStartAdvertising(peripheral: CBPeripheralManager, error: NSError?) {
+        print(__FUNCTION__)
+        print(peripheral)
+    }
+    
+    func peripheralManager(peripheral: CBPeripheralManager, willRestoreState dict: [String : AnyObject]) {
         print(__FUNCTION__)
     }
     
