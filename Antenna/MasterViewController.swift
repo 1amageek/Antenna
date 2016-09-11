@@ -10,7 +10,7 @@ import UIKit
 import CoreBluetooth
 import Photos
 
-class MasterViewController: UITableViewController, AntennaDelegate {
+class MasterViewController: UITableViewController {
 
     var detailViewController: DetailViewController? = nil
     let characteristicUUID: CBUUID = CBUUID(string: "3E770C8F-DB75-43AA-A335-1013A728BF42")
@@ -27,28 +27,42 @@ class MasterViewController: UITableViewController, AntennaDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+    
+        let antenna: Antenna = Antenna.sharedAntenna
         
-        Antenna.sharedAntenna.delegate = self
-        Antenna.sharedAntenna.startAndReady { (antenna) -> Void in
-            let characteristic: CBMutableCharacteristic = CBMutableCharacteristic(type: self.characteristicUUID, properties: CBCharacteristicProperties.Notify, value: nil, permissions: .Readable)
-            let service: CBMutableService = CBMutableService(type: self.serviceUUID, primary: true)
-            service.characteristics = [characteristic]
-            antenna.services = [service]
+        // Characteristic
+        let currentUserID: Data = "id".data(using: String.Encoding.utf8)!
+        let userID: CBMutableCharacteristic = CBMutableCharacteristic(type: characteristicUUID, properties: .read, value: currentUserID, permissions: .readable)
+        
+        // Service
 
-            antenna.startAdvertising([CBAdvertisementDataLocalNameKey: "Antenna", CBAdvertisementDataServiceUUIDsKey: [self.serviceUUID]])
-            //antenna.stopAdvertising()
-            antenna.scanForPeripheralsWithServices([self.serviceUUID])
+        let service: CBMutableService = CBMutableService(type: serviceUUID, primary: true)
+        service.characteristics = [userID]
+        
+        antenna.localName = "Antenna"
+        antenna.serviceUUIDs = [serviceUUID]
+        antenna.services = [service]
+        
+        antenna.createDeviceBlock = { (peripheral, characteristic) in
+            if characteristic.uuid.isEqual(userID) {
+                if let idData: Data = characteristic.value, let id: String = String(data: idData, encoding: String.Encoding.utf8){
+                    return Antenna.Device(id: id, peripheral: peripheral)
+                }
+            }
+            return nil
+        }
+        
+        Antenna.sharedAntenna.startAndReady { (antenna) -> Void in
+            
+            antenna.startAdvertising()
+            antenna.startScan()
             
         }
         
-        if let split = self.splitViewController {
-            let controllers = split.viewControllers
-            self.detailViewController = (controllers[controllers.count-1] as! UINavigationController).topViewController as? DetailViewController
-        }
     }
 
-    override func viewWillAppear(animated: Bool) {
-        self.clearsSelectionOnViewWillAppear = self.splitViewController!.collapsed
+    override func viewWillAppear(_ animated: Bool) {
+        self.clearsSelectionOnViewWillAppear = self.splitViewController!.isCollapsed
         super.viewWillAppear(animated)
     }
 
@@ -59,7 +73,7 @@ class MasterViewController: UITableViewController, AntennaDelegate {
 
     // MARK: - Segues
 
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "showDetail" {
 
         }
@@ -67,29 +81,31 @@ class MasterViewController: UITableViewController, AntennaDelegate {
 
     // MARK: - Table View
 
-    override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
 
-    override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return Antenna.sharedAntenna.connectedPeripherals.count
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return Antenna.sharedAntenna.connectedDevices.count
     }
 
-    override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath)
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
-        let object = Antenna.sharedAntenna.connectedPeripherals![indexPath.row]
+        let object = Antenna.sharedAntenna.connectedDevices.sorted { (device1, device2) -> Bool in
+            return device1.id > device2.id
+        }
         cell.textLabel!.text = object.description
         return cell
     }
 
-    override func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         // Return false if you do not want the specified item to be editable.
         return true
     }
     
-    func antenna(antenna: Antenna, didChangeConnectedPeripherals peripherals: [CBPeripheral]) {
-        dispatch_async(dispatch_get_main_queue()) { () -> Void in
+    func antenna(_ antenna: Antenna, didChangeConnectedPeripherals peripherals: [CBPeripheral]) {
+        DispatchQueue.main.async { () -> Void in
             self.tableView.reloadData()
         }
     }

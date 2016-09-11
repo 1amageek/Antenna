@@ -14,8 +14,7 @@
 		122102B51C3675C100F87CC6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 122102B41C3675C100F87CC6 /* Assets.xcassets */; };
 		122102B81C3675C100F87CC6 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 122102B61C3675C100F87CC6 /* LaunchScreen.storyboard */; };
 		122102C31C3675C100F87CC6 /* AntennaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122102C21C3675C100F87CC6 /* AntennaTests.swift */; };
-		122102CE1C36769700F87CC6 /* Antenna.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122102CD1C36769700F87CC6 /* Antenna.swift */; };
-		122102CF1C38024300F87CC6 /* Antenna.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122102CD1C36769700F87CC6 /* Antenna.swift */; };
+		1223DCAA1D8028D600855190 /* Antenna.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1223DCA91D8028D600855190 /* Antenna.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,7 +39,7 @@
 		122102BE1C3675C100F87CC6 /* AntennaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AntennaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		122102C21C3675C100F87CC6 /* AntennaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntennaTests.swift; sourceTree = "<group>"; };
 		122102C41C3675C100F87CC6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		122102CD1C36769700F87CC6 /* Antenna.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Antenna.swift; sourceTree = "<group>"; };
+		1223DCA91D8028D600855190 /* Antenna.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Antenna.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,10 +81,10 @@
 		122102AA1C3675C100F87CC6 /* Antenna */ = {
 			isa = PBXGroup;
 			children = (
+				1223DCA91D8028D600855190 /* Antenna.swift */,
 				122102AB1C3675C100F87CC6 /* AppDelegate.swift */,
 				122102AD1C3675C100F87CC6 /* MasterViewController.swift */,
 				122102AF1C3675C100F87CC6 /* DetailViewController.swift */,
-				122102CD1C36769700F87CC6 /* Antenna.swift */,
 				122102B11C3675C100F87CC6 /* Main.storyboard */,
 				122102B41C3675C100F87CC6 /* Assets.xcassets */,
 				122102B61C3675C100F87CC6 /* LaunchScreen.storyboard */,
@@ -154,6 +153,7 @@
 					122102A71C3675C100F87CC6 = {
 						CreatedOnToolsVersion = 7.2;
 						DevelopmentTeam = 88ACA86N96;
+						LastSwiftMigration = 0800;
 						SystemCapabilities = {
 							com.apple.BackgroundModes = {
 								enabled = 1;
@@ -162,6 +162,7 @@
 					};
 					122102BD1C3675C100F87CC6 = {
 						CreatedOnToolsVersion = 7.2;
+						LastSwiftMigration = 0800;
 						TestTargetID = 122102A71C3675C100F87CC6;
 					};
 				};
@@ -211,7 +212,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				122102B01C3675C100F87CC6 /* DetailViewController.swift in Sources */,
-				122102CE1C36769700F87CC6 /* Antenna.swift in Sources */,
+				1223DCAA1D8028D600855190 /* Antenna.swift in Sources */,
 				122102AE1C3675C100F87CC6 /* MasterViewController.swift in Sources */,
 				122102AC1C3675C100F87CC6 /* AppDelegate.swift in Sources */,
 			);
@@ -222,7 +223,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				122102C31C3675C100F87CC6 /* AntennaTests.swift in Sources */,
-				122102CF1C38024300F87CC6 /* Antenna.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,6 +348,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = inc.stamp.Antenna;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -362,6 +363,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = inc.stamp.Antenna;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -373,6 +375,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = inc.stamp.AntennaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Antenna.app/Antenna";
 			};
 			name = Debug;
@@ -385,6 +388,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = inc.stamp.AntennaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Antenna.app/Antenna";
 			};
 			name = Release;
