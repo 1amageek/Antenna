@@ -160,8 +160,8 @@ class Beacon: NSObject, CBPeripheralManagerDelegate, Communicable {
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: Beacon.BeaconDidReceiveWriteNotificationKey), object: nil, userInfo: nil)
         }
         
-        let a = dict[CBPeripheralManagerRestoredStateServicesKey]
-        let b = dict[CBPeripheralManagerRestoredStateAdvertisementDataKey]
+//        let a = dict[CBPeripheralManagerRestoredStateServicesKey]
+//        let b = dict[CBPeripheralManagerRestoredStateAdvertisementDataKey]
         
     }
     

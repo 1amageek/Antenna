@@ -41,6 +41,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
         splitViewController.delegate = self
         
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: Beacon.BeaconDidReceiveWriteNotificationKey), object: nil, queue: nil) { (notification) in
+            
+            print("😍😌")
+            
             let notification: UILocalNotification = UILocalNotification()
             notification.fireDate = Date()
             notification.alertTitle = "😁😆😍😌😝😜😚😙☹️"
