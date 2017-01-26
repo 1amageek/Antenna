@@ -16,7 +16,10 @@ extension Communicable {
     }
     
     var characteristicUUIDs: [CBUUID] {
-        return [CBUUID(string: "CB0CC42D-8F20-4FA7-A224-DBC1707CF89A")]
+        return [
+            CBUUID(string: "CB0CC42D-8F20-4FA7-A224-DBC1707CF89A"),
+            CBUUID(string: "AEB83B76-B49E-42F3-80E9-79B427768303")
+        ]
     }
     
 }
@@ -28,16 +31,16 @@ extension Communicable {
         guard let serviceUUID: CBUUID = self.serviceUUIDs.first else {
             return nil
         }
-        guard let characteristicUUID: CBUUID = self.characteristicUUIDs.first else {
-            return nil
-        }
         
         let service: CBMutableService = CBMutableService(type: serviceUUID, primary: true)
         
         // Characteristic
         let currentUserID: Data = "user_id".data(using: String.Encoding.utf8)!
-        let userID: CBMutableCharacteristic = CBMutableCharacteristic(type: characteristicUUID, properties: .read, value: currentUserID, permissions: .readable)
-        service.characteristics = [userID]
+        let userID: CBMutableCharacteristic = CBMutableCharacteristic(type: CBUUID(string: "CB0CC42D-8F20-4FA7-A224-DBC1707CF89A"), properties: .read, value: currentUserID, permissions: .readable)
+        
+        let write: CBMutableCharacteristic = CBMutableCharacteristic(type: CBUUID(string: "AEB83B76-B49E-42F3-80E9-79B427768303"), properties: .write, value: nil, permissions: .writeable)
+        
+        service.characteristics = [userID, write]
         
         return service
     }

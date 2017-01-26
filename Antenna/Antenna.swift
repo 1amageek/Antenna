@@ -68,11 +68,11 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
     // MARK: -
     
     func applicationDidEnterBackground() {
-        //self.stopScan()
+        self.stopScan()
     }
     
     func applicationWillResignActive() {
-        //self.startScan()
+        self.startScan()
     }
     
     override init() {
@@ -165,7 +165,8 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
     open func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         self.discoveredPeripherals.insert(peripheral)
         self.centralManager.connect(peripheral, options: nil)
-        debugPrint("[Antenna Antenna] discover peripheral. ", peripheral)
+        debugPrint("[Antenna Antenna] discover peripheral. ", peripheral, RSSI)
+        
     }
     
     open func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -212,6 +213,10 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
                 if properties.contains(.read) {
                     peripheral.readValue(for: characteristic)
                 }
+                if properties.contains(.write) {
+                    let data: Data = "hogehoge".data(using: .utf8)!
+                    peripheral.writeValue(data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
+                }
             }
         }
     }
@@ -238,6 +243,12 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
     
     open func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         debugPrint("[Antenna Antenna] did update value for ", peripheral, characteristic)
+        guard let data: Data = characteristic.value else {
+            return
+        }
+        let value: String = String(data: data, encoding: .utf8)!
+        print(value)
+        
     }
     
     // MARK: -

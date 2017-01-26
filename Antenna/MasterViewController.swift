@@ -21,7 +21,7 @@ class MasterViewController: UITableViewController {
         
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Rescan", style: .plain, target: self, action: #selector(rescan(_:)))
         
-        Beacon.default.startAdvertising()
+        //Beacon.default.startAdvertising()
         Antenna.default.startScan()
     
     }

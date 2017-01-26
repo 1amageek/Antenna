@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import UserNotifications
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDelegate {
@@ -15,11 +16,40 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        if #available(iOS 10.0, *) {
+            let authOptions : UNAuthorizationOptions = [.alert, .badge, .sound]
+            UNUserNotificationCenter.current().requestAuthorization(options: authOptions, completionHandler: { granted, error in
+
+            })
+            
+            // For iOS 10 display notification (sent via APNS)
+            UNUserNotificationCenter.current().delegate = self
+            
+        } else {
+            let settings: UIUserNotificationSettings =
+                UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
+            application.registerUserNotificationSettings(settings)
+        }
+        
+        application.registerForRemoteNotifications()
+        
+        
         // Override point for customization after application launch.
         let splitViewController = self.window!.rootViewController as! UISplitViewController
         let navigationController = splitViewController.viewControllers[splitViewController.viewControllers.count-1] as! UINavigationController
         navigationController.topViewController!.navigationItem.leftBarButtonItem = splitViewController.displayModeButtonItem
         splitViewController.delegate = self
+        
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: Beacon.BeaconDidReceiveWriteNotificationKey), object: nil, queue: nil) { (notification) in
+            let notification: UILocalNotification = UILocalNotification()
+            notification.fireDate = Date()
+            notification.alertTitle = "😁😆😍😌😝😜😚😙☹️"
+            notification.alertBody = "😁😆😍😌😝😜😚😙☹️"
+            notification.alertAction = "OK"
+            notification.soundName = UILocalNotificationDefaultSoundName
+            application.scheduleLocalNotification(notification)
+        }
+        
         return true
     }
 
@@ -57,5 +87,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
         return false
     }
 
+}
+
+@available(iOS 10, *)
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    
+    // Receive displayed notifications for iOS 10 devices.
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        let userInfo = notification.request.content.userInfo
+        // debugPrint full message.
+        debugPrint(userInfo)
+    }
 }
 

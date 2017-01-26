@@ -13,6 +13,8 @@ class Beacon: NSObject, CBPeripheralManagerDelegate, Communicable {
     
     static let `default`: Beacon = Beacon()
     
+    static let BeaconDidReceiveWriteNotificationKey: String = "antenna.beacon.receive.notification.key"
+    
     // MARK: - public
     
     public var localName: String?
@@ -153,6 +155,14 @@ class Beacon: NSObject, CBPeripheralManagerDelegate, Communicable {
     
     open func peripheralManager(_ peripheral: CBPeripheralManager, willRestoreState dict: [String : Any]) {
         debugPrint("[Antenna Beacon] will restore state ", dict)
+        
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: Beacon.BeaconDidReceiveWriteNotificationKey), object: nil, userInfo: nil)
+        }
+        
+        let a = dict[CBPeripheralManagerRestoredStateServicesKey]
+        let b = dict[CBPeripheralManagerRestoredStateAdvertisementDataKey]
+        
     }
     
     open func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
@@ -173,6 +183,17 @@ class Beacon: NSObject, CBPeripheralManagerDelegate, Communicable {
     
     open func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
         debugPrint("[Antenna Beacon] did receive write", peripheral, requests)
+        for request: CBATTRequest in requests {
+            print(request)
+            guard let data: Data = request.value else {
+                return
+            }
+            
+            print(String(data: data, encoding: .utf8)!)
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: NSNotification.Name(rawValue: Beacon.BeaconDidReceiveWriteNotificationKey), object: nil, userInfo: nil)
+            }
+        }
     }
     
 }
