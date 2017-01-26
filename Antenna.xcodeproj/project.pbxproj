@@ -15,6 +15,9 @@
 		122102B81C3675C100F87CC6 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 122102B61C3675C100F87CC6 /* LaunchScreen.storyboard */; };
 		122102C31C3675C100F87CC6 /* AntennaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122102C21C3675C100F87CC6 /* AntennaTests.swift */; };
 		1223DCAA1D8028D600855190 /* Antenna.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1223DCA91D8028D600855190 /* Antenna.swift */; };
+		12625FE51E3836670025A7D6 /* Beacon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12625FE41E3836670025A7D6 /* Beacon.swift */; };
+		12625FE71E384D9D0025A7D6 /* Communicable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12625FE61E384D9D0025A7D6 /* Communicable.swift */; };
+		12625FE91E384E350025A7D6 /* Communicable+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12625FE81E384E350025A7D6 /* Communicable+.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +43,9 @@
 		122102C21C3675C100F87CC6 /* AntennaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntennaTests.swift; sourceTree = "<group>"; };
 		122102C41C3675C100F87CC6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1223DCA91D8028D600855190 /* Antenna.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Antenna.swift; sourceTree = "<group>"; };
+		12625FE41E3836670025A7D6 /* Beacon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Beacon.swift; sourceTree = "<group>"; };
+		12625FE61E384D9D0025A7D6 /* Communicable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Communicable.swift; sourceTree = "<group>"; };
+		12625FE81E384E350025A7D6 /* Communicable+.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Communicable+.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +88,9 @@
 			isa = PBXGroup;
 			children = (
 				1223DCA91D8028D600855190 /* Antenna.swift */,
+				12625FE41E3836670025A7D6 /* Beacon.swift */,
+				12625FE61E384D9D0025A7D6 /* Communicable.swift */,
+				12625FE81E384E350025A7D6 /* Communicable+.swift */,
 				122102AB1C3675C100F87CC6 /* AppDelegate.swift */,
 				122102AD1C3675C100F87CC6 /* MasterViewController.swift */,
 				122102AF1C3675C100F87CC6 /* DetailViewController.swift */,
@@ -211,8 +220,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				12625FE91E384E350025A7D6 /* Communicable+.swift in Sources */,
 				122102B01C3675C100F87CC6 /* DetailViewController.swift in Sources */,
 				1223DCAA1D8028D600855190 /* Antenna.swift in Sources */,
+				12625FE71E384D9D0025A7D6 /* Communicable.swift in Sources */,
+				12625FE51E3836670025A7D6 /* Beacon.swift in Sources */,
 				122102AE1C3675C100F87CC6 /* MasterViewController.swift in Sources */,
 				122102AC1C3675C100F87CC6 /* AppDelegate.swift in Sources */,
 			);
@@ -344,6 +356,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = Antenna/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = inc.stamp.Antenna;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -359,6 +372,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = Antenna/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = inc.stamp.Antenna;
 				PRODUCT_NAME = "$(TARGET_NAME)";
