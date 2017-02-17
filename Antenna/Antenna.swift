@@ -15,14 +15,20 @@ import CoreBluetooth
  PeripheralControllerを有し、見つけたPeripheralの制御をします。
  */
 
-let AntennaDidChangeConnectedPeripherals: String = "antenna.did.change.connected.peripherals"
-let AntennaDidChangeConnectedDevices: String = "antenna.did.change.connected.devices"
-let AntennaPeripheralsKey: String = "antenna.peripherals.key"
-let AntennaDevicesKey: String = "antenna.devices.key"
 
 open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Communicable {
     
     static let `default`: Antenna = Antenna()
+    
+    public var readValueBlock: ((CBPeripheral, CBCharacteristic) -> Void)?
+    
+    public var writeValueBlock: ((CBPeripheral, CBCharacteristic) -> Void)?
+    
+    public var changeConnectedPeripheralsBlock: ((Set<CBPeripheral>) -> Void)?
+    
+    public var changeConnectedDevicesBlock: ((Set<Device>) -> Void)?
+    
+    public var createDeviceBlock: ((_ peripheral: CBPeripheral, _ characteristic: CBCharacteristic) -> Device?)?
     
     private let restoreIdentifierKey = "antenna.antenna.restore.key"
     
@@ -42,7 +48,7 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
     private(set) var connectedPeripherals: Set<CBPeripheral> = [] {
         didSet {
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: Notification.Name(rawValue: AntennaDidChangeConnectedPeripherals), object: self, userInfo: [AntennaPeripheralsKey: self.connectedPeripherals])
+                self.changeConnectedPeripheralsBlock?(self.connectedPeripherals)
             }
         }
     }
@@ -56,23 +62,31 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
     var connectedDevices: Set<Device> = [] {
         didSet {
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: Notification.Name(rawValue: AntennaDidChangeConnectedDevices), object: self, userInfo: [AntennaDevicesKey: self.connectedDevices])
+                self.changeConnectedDevicesBlock?(self.connectedDevices)
             }
         }
     }
+    
+    private var thresholdRSSI: NSNumber?
+    
+    private var allowDuplicates: Bool = false
     
     private var scanOptions: [String: Any]?
     
     private var startScanBlock: (([String : Any]?) -> Void)?
     
+    private var didUpdateValueBlock: ((CBCharacteristic, Error?) -> Void)?
+    
+    private var timeoutWorkItem: DispatchWorkItem?
+    
     // MARK: -
     
     func applicationDidEnterBackground() {
-        self.stopScan()
+        stopScan()
     }
     
     func applicationWillResignActive() {
-        self.startScan()
+        // TODO:
     }
     
     override init() {
@@ -86,8 +100,6 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
     }
     
     // MARK - method
-
-    var createDeviceBlock: ((_ peripheral: CBPeripheral, _ characteristic: CBCharacteristic) -> Device?)?
     
     /**
      Scan
@@ -99,23 +111,30 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
     }
     
     /// Start scan
-    func startScan() {
-        let options: [String: Any] = [CBCentralManagerScanOptionAllowDuplicatesKey: false]
-        startScan(options: options)
-    }
     
-    func startScan(options: [String: Any]?) {        
-        self.scanOptions = options
+    func startScan(thresholdRSSI: NSNumber? = nil, allowDuplicates: Bool = false, options: [String: Any]? = nil) {
+        self.thresholdRSSI = thresholdRSSI
+        self.allowDuplicates = allowDuplicates
+        if let options: [String: Any] = options {
+            self.scanOptions = options
+        } else {
+            let options: [String: Any] = [
+                CBCentralManagerScanOptionAllowDuplicatesKey: allowDuplicates,
+                CBCentralManagerScanOptionSolicitedServiceUUIDsKey: self.serviceUUIDs
+            ]
+            self.scanOptions = options
+        }
+        
         if #available(iOS 10.0, *) {
             if status == .poweredOn {
                 if !isScanning {
-                    self.centralManager.scanForPeripherals(withServices: self.serviceUUIDs, options: options)
+                    self.centralManager.scanForPeripherals(withServices: self.serviceUUIDs, options: self.scanOptions)
                     debugPrint("[Antenna Antenna] start scan.")
                 }
             } else {
                 self.startScanBlock = { [unowned self] (options) in
                     if !self.isScanning {
-                        self.centralManager.scanForPeripherals(withServices: self.serviceUUIDs, options: options)
+                        self.centralManager.scanForPeripherals(withServices: self.serviceUUIDs, options: self.scanOptions)
                         debugPrint("[Antenna Antenna] start scan.")
                     }
                 }
@@ -123,25 +142,38 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
         } else {
             self.startScanBlock = { [unowned self] (options) in
                 if !self.isScanning {
-                    self.centralManager.scanForPeripherals(withServices: self.serviceUUIDs, options: options)
+                    self.centralManager.scanForPeripherals(withServices: self.serviceUUIDs, options: self.scanOptions)
                     debugPrint("[Antenna Antenna] start scan.")
                 }
             }
         }
-
+        
+        let workItem: DispatchWorkItem = DispatchWorkItem {
+            if self.centralManager.isScanning {
+                self.stopScan()
+            }
+            self.timeoutWorkItem = nil
+        }
+        
+        self.timeoutWorkItem = workItem
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(20), execute: workItem)
+        
     }
+    
     
     /// Clear and scan
     func reScan() {
         self.stopScan()
         self.cleanup()
-        self.startScan()
+        self.startScan(thresholdRSSI: self.thresholdRSSI, allowDuplicates: self.allowDuplicates, options: self.scanOptions)
     }
     
     /// Stop scan
     func stopScan() {
+        self.timeoutWorkItem?.cancel()
         self.centralManager.stopScan()
-        self.discoveredPeripherals = []
+        debugPrint("[Antenna Antenna] Stop scan.")
     }
     
     /// cleanup
@@ -149,6 +181,13 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
         self.discoveredPeripherals = []
         self.connectedPeripherals = []
         self.connectedDevices = []
+        self.readValueBlock = nil
+        self.writeValueBlock = nil
+        self.changeConnectedPeripheralsBlock = nil
+        self.changeConnectedDevicesBlock = nil
+        self.thresholdRSSI = nil
+        self.scanOptions = nil
+        self.didUpdateValueBlock = nil
     }
     
     // MARK: - CBCentralManagerDelegate
@@ -164,7 +203,15 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
     
     open func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         self.discoveredPeripherals.insert(peripheral)
-        self.centralManager.connect(peripheral, options: nil)
+        if let thresholdRSSI: NSNumber = self.thresholdRSSI {
+            if thresholdRSSI.intValue < RSSI.intValue {
+                self.centralManager.connect(peripheral, options: nil)
+                stopScan()
+            }
+        } else {
+            self.centralManager.connect(peripheral, options: nil)
+        }
+        
         debugPrint("[Antenna Antenna] discover peripheral. ", peripheral, RSSI)
         
     }
@@ -211,11 +258,10 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
                 let properties: CBCharacteristicProperties = characteristic.properties
                 debugPrint("[Antenna Antenna] characteristic properties. ", properties)
                 if properties.contains(.read) {
-                    peripheral.readValue(for: characteristic)
+                    self.readValueBlock?(peripheral, characteristic)
                 }
                 if properties.contains(.write) {
-                    let data: Data = "hogehoge".data(using: .utf8)!
-                    peripheral.writeValue(data, for: characteristic, type: CBCharacteristicWriteType.withResponse)
+                    self.writeValueBlock?(peripheral, characteristic)
                 }
             }
         }
@@ -243,12 +289,7 @@ open class Antenna: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate, Co
     
     open func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         debugPrint("[Antenna Antenna] did update value for ", peripheral, characteristic)
-        guard let data: Data = characteristic.value else {
-            return
-        }
-        let value: String = String(data: data, encoding: .utf8)!
-        print(value)
-        
+        didUpdateValueBlock?(characteristic, error)
     }
     
     // MARK: -

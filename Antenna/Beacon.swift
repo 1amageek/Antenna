@@ -13,11 +13,17 @@ class Beacon: NSObject, CBPeripheralManagerDelegate, Communicable {
     
     static let `default`: Beacon = Beacon()
     
-    static let BeaconDidReceiveWriteNotificationKey: String = "antenna.beacon.receive.notification.key"
+    static let ReceiveWritePeripheralKey: AnyHashable = "antenna.beacon.receive.peripheral.key"
+    
+    static let ReceiveWriteDataKey: AnyHashable = "antenna.beacon.receive.data.key"
+    
+    static let ReceiveWriteCBATTRequestKey: AnyHashable = "antenna.beacon.receive.CBATTRequest.key"
     
     // MARK: - public
     
     public var localName: String?
+    
+    public var serviceData: Data?
     
     public var isAdvertising: Bool {
         return self.peripheralManager.isAdvertising
@@ -80,7 +86,7 @@ class Beacon: NSObject, CBPeripheralManagerDelegate, Communicable {
         }
     }
     
-    public func startAdvertising() {        
+    public func startAdvertising() {
         var advertisementData: [String: Any] = [:]
         
         // Set serviceUUIDs
@@ -91,6 +97,11 @@ class Beacon: NSObject, CBPeripheralManagerDelegate, Communicable {
         if let localName: String = self.localName {
             advertisementData[CBAdvertisementDataLocalNameKey] = localName
         }
+        
+        // Set service data
+        //        if let serviceData: Data = self.serviceData {
+        //            advertisementData[CBAdvertisementDataServiceDataKey] = serviceData
+        //        }
         
         startAdvertising(advertisementData)
     }
@@ -156,12 +167,8 @@ class Beacon: NSObject, CBPeripheralManagerDelegate, Communicable {
     open func peripheralManager(_ peripheral: CBPeripheralManager, willRestoreState dict: [String : Any]) {
         debugPrint("[Antenna Beacon] will restore state ", dict)
         
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: Beacon.BeaconDidReceiveWriteNotificationKey), object: nil, userInfo: nil)
-        }
-        
-//        let a = dict[CBPeripheralManagerRestoredStateServicesKey]
-//        let b = dict[CBPeripheralManagerRestoredStateAdvertisementDataKey]
+        //        let a = dict[CBPeripheralManagerRestoredStateServicesKey]
+        //        let b = dict[CBPeripheralManagerRestoredStateAdvertisementDataKey]
         
     }
     
@@ -184,16 +191,22 @@ class Beacon: NSObject, CBPeripheralManagerDelegate, Communicable {
     open func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
         debugPrint("[Antenna Beacon] did receive write", peripheral, requests)
         for request: CBATTRequest in requests {
-            print(request)
             guard let data: Data = request.value else {
                 return
             }
-            
-            print(String(data: data, encoding: .utf8)!)
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: NSNotification.Name(rawValue: Beacon.BeaconDidReceiveWriteNotificationKey), object: nil, userInfo: nil)
+                NotificationCenter.default.post(name: .BeaconDidReceiveWriteNotificationKey, object: nil, userInfo: [
+                    Beacon.ReceiveWritePeripheralKey: peripheral,
+                    Beacon.ReceiveWriteCBATTRequestKey: request,
+                    Beacon.ReceiveWriteDataKey: data
+                    ])
             }
         }
     }
     
+}
+
+extension NSNotification.Name {
+    static let BeaconDidReceiveReadNotificationKey: NSNotification.Name = NSNotification.Name(rawValue: "antenna.beacon.receive.read.notification.key")
+    static let BeaconDidReceiveWriteNotificationKey: NSNotification.Name = NSNotification.Name(rawValue: "antenna.beacon.receive.write.notification.key")
 }
